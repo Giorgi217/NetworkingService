@@ -5,7 +5,7 @@ import Foundation
 
 public class Networking: NetworkServiceProtocol {
     
-    init() { }
+    public init() { }
 
     public func fetchData<T: Decodable>(urlString: String, completion: @escaping @Sendable (Result<T, Error>) -> Void) {
         
