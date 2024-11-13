@@ -3,12 +3,14 @@
 
 import Foundation
 
-public final class NewsViewModel: NetworkService {
+public class Networking: NetworkServiceProtocol {
     
-   public init() { }
-    
+    init() { }
+
     public func fetchData<T: Decodable>(urlString: String, completion: @escaping @Sendable (Result<T, Error>) -> Void) {
+        
         guard let url = URL(string: urlString) else {
+            completion(.failure(NetworkError.invalidURL))
             return
         }
         
@@ -16,32 +18,34 @@ public final class NewsViewModel: NetworkService {
         request.httpMethod = "GET"
         
         URLSession.shared.dataTask(with: request) { data, response, error in
-            if error != nil {
+            if let error = error {
+                completion(.failure(error))
                 return
             }
             
             guard let data = data else {
+                completion(.failure(NetworkError.noData))
                 return
             }
             
             let decoder = JSONDecoder()
-            
-            if let decodedResponse = try? decoder.decode(T.self, from: data) {
-                completion(.success(decodedResponse))
-            } else {
-                completion(.failure(NetworkError.decodingError))
+            do {
+                let decodedData = try decoder.decode(T.self, from: data)
+                completion(.success(decodedData))
+            } catch {
+                completion(.failure(error))
             }
         }.resume()
     }
 }
 
+
 public enum NetworkError: Error {
     case invalidURL
-    case decodingError
-    case networkError(Error)
-    case unknown
+    case noData
 }
 
-public protocol NetworkService {
+public protocol NetworkServiceProtocol {
     func fetchData<T: Decodable>(urlString: String, completion: @escaping @Sendable (Result<T, Error>) -> Void)
 }
+
